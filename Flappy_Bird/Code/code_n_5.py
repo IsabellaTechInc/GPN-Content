@@ -10,52 +10,60 @@ pipe_image = image.load("pipe.png")
 flipped_pipe_image = transform.flip(pipe_image, False, True)
 coin_image = image.load("coin.png")
 
-class Pipe ():
-
-    def __init__(self, x, y, flipped):
-        self.x = x
-        self.y = y
-        self.flipped = flipped
+#Made an NPC parent class because of all the similarities in the methods
+class NonPlayable():
+    def __init(self,x,y,coin):
+        seld.x=x
+        self.y=y
+        self.image=image.load("noImage.png")
+        self.coin=coin
 
     def blit(self):
-        if self.flipped:
-            self.rect = screen.blit(flipped_pipe_image, (self.x, -self.y))
-        else:
-            self.rect = screen.blit(pipe_image, (self.x, self.y))
+        self.rect = screen.blit(self.image,(self.x, self.y))
 
     def move(self):
-        self.x = self.x - 2
-        if self.x < -70:
-            self.x = 800
-            self.y = randint(100, 500)
-            self.flipped = choice([True, False])
-    
+        #gravity
+        self.x = self.x-2
+        if self.x<=-70:
+            #wrap around
+            self.x=800
+            self.y= randint(100,500)
+            if not self.coin:
+                #this replaces self.flipped so it still works with coin inheritance wise (migh be a better way to do this?)
+                if choice([True, False]):
+                    self.y=-self.y
+                    self.image= transform.flip(self.image, False, True)
+
     def collides_with(self, bird):
-        return bird.colliderect(self.rect)
+        #collated the overall function of the collides (collides_with and collected_by)
+        if bird.colliderect(self.rect):
+            if self.coin:
+                self.x = 800
+                self.y = randint(100, 500)
+            return True
+        return False
 
-
-#Created the Coin class
-class Coin ():
+class Pipe (NonPlayable):
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.image=pipe_image
+        #this might make the game harder just because it doesn't ensure any initial direction but i figured it was ok
+        if choice([True,False]):
+            self.y=-self.y
+            self.image= transform.flip(self.image, False, True)
+        self.coin=False
 
-    def blit(self):
-        self.rect = screen.blit(coin_image, (self.x, self.y))
 
-    def move(self):
-        self.x = self.x - 2
-        if self.x < -70:
-            self.x = 800
-            self.y = randint(100, 500)
+class Coin (NonPlayable):
 
-    def collected_by(self, bird):
-        if bird.colliderect(self.rect):
-            self.x = 800
-            self.y = randint(100, 500)
-            return True
-        return False
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.image=coin_image
+        self.coin=True
+
 
 
 init()
@@ -71,16 +79,15 @@ bird_image = image.load("bird.png")
 bird_x = 10
 bird_y = 250
 
-pipe1_object = Pipe(200, 250, False)
-pipe2_object = Pipe(450, 100, False)
-pipe3_object = Pipe(700, 400, True)
+pipe1_object = Pipe(200, 250)
+pipe2_object = Pipe(450, 100)
+pipe3_object = Pipe(700, 400)
 
 pipes = [pipe1_object, pipe2_object, pipe3_object]
 
-#Made a coin
+
 coin = Coin(400, 150)
 
-#Made a points variable
 points = 0
 
 over = False
@@ -101,12 +108,12 @@ while True:
 
 
     background = screen.blit(background_image, (0, 0))
+    # i know functionality wise bird doesn't need to be a class but it would help teach them?
     bird = screen.blit(bird_image, (bird_x, bird_y))
 
     for pipe in pipes:
         pipe.blit()
 
-    #Blit the coin
     coin.blit()
         
     display.update()
@@ -118,8 +125,8 @@ while True:
             over = True
             break
         
-    #Check if the coin is collected and update the points
-    if coin.collected_by(bird):
+    #Check if the coin collides
+    if coin.collides_with(bird):
         points = points + 1
 
     if over:
